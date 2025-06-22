@@ -12,3 +12,4 @@
 /app.log
 /.coverage
 /DATA/
+*.png
