@@ -101,7 +101,21 @@ def optimize_dataframe(df):
 
 
 def load_file(file_path, format):
-    """Загружает файл с автоматической фильтрацией столбцов и переименованием заголовков"""
+    """
+    Загружает файл с автоматической фильтрацией столбцов и переименованием заголовков
+
+    Параметры:
+        file_path (str): Путь к файлу для загрузки
+        format (str): Формат файла ('PYRAMIDA', 'TELESCOP', 'SIMS' или 'EMIS')
+
+    Возвращает:
+        pd.DataFrame: Загруженные и обработанные данные или None при ошибке
+
+    Пример:
+        >>> df = load_file('data.xlsx', 'PYRAMIDA')
+        >>> print(df.shape)
+        (100, 13)
+    """
     if not os.path.exists(file_path):
         logging.info(f"Файл не найден: {file_path}")
         return None
