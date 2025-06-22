@@ -6,3 +6,4 @@
 /load_sims_file.py
 /for_test.ipynb
 /.venv/
+*.pyc
