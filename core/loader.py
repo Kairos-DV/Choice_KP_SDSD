@@ -1,14 +1,42 @@
 # Загрузчики данных
 import pandas as pd
-import os
-from datetime import datetime
-from config import *
+from functools import lru_cache
+import hashlib
+
+from core.processor import *
+
+
+@lru_cache(maxsize=32)
+def cached_load_file(file_path, format):
+    """Кэшированная версия функции load_file"""
+    if not os.path.exists(file_path):
+        logging.info(f"Файл не найден: {file_path}")
+        return None
+    try:
+        # Генерируем хеш содержимого файла для инвалидации кэша
+        with open(file_path, 'rb') as f:
+            file_hash = hashlib.md5(f.read()).hexdigest()
+
+        # Ключ кэша = путь + хеш + формат
+        cache_key = f"{file_path}_{file_hash}_{format}"
+        return load_file(file_path, format)
+    except Exception as e:
+        logging.info(f"Ошибка при кэшированной загрузке файла {file_path}: {str(e)}")
+        return None
+
+def get_file_hash(file_path):
+    """Генерирует хеш файла для инвалидации кэша при изменениях"""
+    with open(file_path, 'rb') as f:
+        return hashlib.md5(f.read()).hexdigest()
 
 
 def load_and_extend_sims(file_path):
     """
     Загружает файл SIMS и добавляет недостающие столбцы, заполняя их"Не указано"
     """
+    if not os.path.exists(file_path):
+        logging.info(f"Файл не найден: {file_path}")
+        return None
     try:
         # Загрузка CSV с разделителем ";"
         df = pd.read_csv(
@@ -44,12 +72,39 @@ def load_and_extend_sims(file_path):
         return df
 
     except Exception as e:
-        print(f"Ошибка обработки файла {file_path}: {str(e)}")
+        logging.info(f"Ошибка обработки файла {file_path}: {str(e)}")
         return None
+
+
+def optimize_dataframe(df):
+    """Оптимизация типов данных для ускорения обработки"""
+    if df.empty:
+        return df
+
+    # Числовые столбцы
+    num_cols = ['Общий', 'День', 'Ночь']
+    for col in num_cols:
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors='coerce', downcast='float')
+
+    # Категориальные данные
+    cat_cols = ['ПО', 'РЭС', 'Тип ПУ']
+    for col in cat_cols:
+        if col in df.columns:
+            df[col] = df[col].astype('category')
+
+    # Даты
+    if 'Дата КП' in df.columns:
+        df['Дата КП'] = pd.to_datetime(df['Дата КП'], format='mixed', errors='coerce')
+
+    return df
 
 
 def load_file(file_path, format):
     """Загружает файл с автоматической фильтрацией столбцов и переименованием заголовков"""
+    if not os.path.exists(file_path):
+        logging.info(f"Файл не найден: {file_path}")
+        return None
     try:
         # Читаем файл в зависимости от формата
         if format == 'PYRAMIDA':
@@ -84,17 +139,38 @@ def load_file(file_path, format):
         else:
             raise ('неизвесный формат')
 
+        # Оптимизация типов данных для ускорения обработки
+        df = optimize_dataframe(df)
+
         df = df.reindex(columns=NEW_NAMES)  # Оставляем только нужные столбцы в правильном порядке
         # Добавление столбца с источником данных
 
 
         # Отладочная информация
-        print(f"Успешно загружен файл {file_path}. Формат файла {format}.")  # Столбцы:", df.columns.tolist())
+        logging.info(f"Успешно загружен файл {file_path}. Формат файла {format}.")  # Столбцы:", df.columns.tolist())
         return df
     except Exception as e:
-        print(f"Ошибка загрузки файла: {e}")
+        logging.info(f"Ошибка загрузки файла: {e}")
         return None
 
+
+def process_file(name):
+    """Обработка одного файла с возвратом имени файла и результата"""
+    format = identific_format_file(name)
+    if not format:
+        logging.info(f'В папке с данными лежит файл неизвестного формата. {name} Он не будет обработан')
+        return None
+
+    try:
+        df = cached_load_file(name, format)
+        if df is not None:
+            df = delete_duplicates(df)
+            return (name, df, format)
+        else:
+            logging.info(f"Не удалось загрузить файл {name}")
+    except Exception as e:
+        logging.info(f"Ошибка обработки файла {name}: {str(e)}")
+    return None
 
 if __name__ == "__main__":
     import doctest

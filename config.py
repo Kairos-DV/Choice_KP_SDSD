@@ -2,7 +2,6 @@
 config.py
 Файл для настройки приложения
 """
-
 # Путь к деректориии с файлами
 PATH_TO_DATA =  'TEST_DATA/' # 'DATA/'
 
@@ -33,3 +32,15 @@ TELESCOP_NEW_NAMES = ['ПО', 'РЭС', 'Населенный пункт', 'ТП
 # Столбцы с показаниями
 COLS_KP = ['Дата КП', 'Общий', 'День', 'Ночь', 'Номер ПУ']
 
+# Настройки логирования
+import logging
+from colorama import init, Fore, Style
+init(autoreset=True)  # Важно для Windows
+logging.basicConfig(
+    level=logging.INFO,
+    format=Fore.CYAN + "%(asctime)s - %(levelname)s - %(message)s" + Style.RESET_ALL,
+    handlers=[
+        logging.FileHandler('app.log'),
+        logging.StreamHandler()
+    ]
+)

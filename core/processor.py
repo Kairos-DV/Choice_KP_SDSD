@@ -8,6 +8,7 @@ from datetime import datetime
 from config import *
 
 
+
 def find_all_files(folder_path=PATH_TO_DATA):
     """
     Ищет и возврашает список всех файлов в указанной дериктории. По умолчанию ищет по пути указаному в config.py
@@ -94,11 +95,11 @@ def delete_duplicates(table, date_column='Дата КП', id_column='Номер 
         # Сортируем по номеру ПУ для удобства
         cleaned_table = cleaned_table.sort_values(by=id_column)
 
-        print(f"Удалено дубликатов: {len(table) - len(cleaned_table)}")
+        logging.info(f"Удалено дубликатов: {len(table) - len(cleaned_table)}")
         return cleaned_table
 
     except Exception as e:
-        print(f"Ошибка при удалении дубликатов: {str(e)}")
+        logging.info(f"Ошибка при удалении дубликатов: {str(e)}")
         return table
 
 
@@ -188,12 +189,12 @@ def save_to_excel(table, file_name, output_folder='output', file_prefix='cleaned
         # Сохранение в двоичном формате Excel
         table.to_excel(filepath, index=False, engine="openpyxl")
 
-        print(f"Файл успешно сохранен: {filepath}")
+        logging.info(f"Файл успешно сохранен: {filepath}")
         return filepath
 
     except ImportError:
         # Если нет pyxlsb, пробуем сохранить как обычный Excel с предупреждением
-        print("Внимание: модуль pyxlsb не установлен, сохраняю в стандартном формате .xlsx")
+        logging.info("Внимание: модуль pyxlsb не установлен, сохраняю в стандартном формате .xlsx")
         alt_path = os.path.join(output_folder, f"{file_prefix}_{timestamp}.xlsx")
         table.to_excel(alt_path, index=False, engine='openpyxl')
         return alt_path

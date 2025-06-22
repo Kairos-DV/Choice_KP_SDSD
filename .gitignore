@@ -7,4 +7,6 @@
 /for_test.ipynb
 /.venv/
 /.idea
+/__pycache__
 *.pyc
+/app.log
