@@ -81,20 +81,11 @@ def optimize_dataframe(df):
     if df.empty:
         return df
 
-    # Убедимся, что номер ПУ - строка
-    if 'Номер ПУ' in df.columns:
-        df['Номер ПУ'] = df['Номер ПУ'].astype(str)
-        # Удаляем первые нули
-        while df['Номер ПУ'][0] == 0:
-            df['Номер ПУ'] = df['Номер ПУ'][1:]
-            
-                                               
     # Числовые столбцы
     num_cols = ['Общий', 'День', 'Ночь']
     for col in num_cols:
         if col in df.columns:
-            # Сначала преобразуем в строку, затем в число, чтобы обработать запятые как десятичные разделители
-            df[col] = df[col].astype(str).str.replace(',', '.').astype(float, errors='ignore')
+            df[col] = pd.to_numeric(df[col], errors='coerce', downcast='float')
 
     # Категориальные данные
     cat_cols = ['ПО', 'РЭС', 'Тип ПУ']
